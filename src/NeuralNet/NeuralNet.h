@@ -116,7 +116,7 @@ struct NetworkTransform
 
 	inline void AddInput(int i, T Inputs[], T Outputs[])
 	{
-		assert(i >= 0 && i < inputCount);
+		assert(i >= 0 && i < (int)inputCount);
 		Inputs[i] = 1; // Note : only doing 1s and 0s which is quicker, would have to refactor to support other value
 
 		SIMD::addVec16(Outputs, &Weights[weightStart + i * outputCount], outputCount);
@@ -125,13 +125,13 @@ struct NetworkTransform
 	// For incremental updates of first layer values
 	inline void AddInput(int i, T Outputs[])
 	{
-		assert(i >= 0 && i < inputCount);
+		assert(i >= 0 && i < (int)inputCount);
 		SIMD::addVec16(Outputs, &Weights[weightStart + i * outputCount], outputCount);
 	}
 
 	inline void RemoveInput(int i, T Outputs[])
 	{
-		assert(i >= 0 && i < inputCount);
+		assert(i >= 0 && i < (int)inputCount);
 		SIMD::subVec16( Outputs, &Weights[weightStart + i * outputCount], outputCount );
 	}
 

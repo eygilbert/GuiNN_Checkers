@@ -4,6 +4,7 @@
 
 #include "engine.h"
 #include "checkersGui.h"
+#include "kr_db.h"
 #include "learning.h"
 
 CheckersGUI GUI;
@@ -118,12 +119,14 @@ void CheckersGUI::SetupAddPiece(int square64, eColor color)
 	DrawBoard(engine.board);
 }
 
-void CheckersGUI::DisplayEvaluation(const Board& board)
+void CheckersGUI::get_eval_string(const Board& board, std::string &evalstr)
 {
-	EvalNetInfo netInfo; 
+	EvalNetInfo &netInfo = engine.searchThreadData.stack->netInfo; 
 	netInfo.netIdx = (int)CheckersNet::GetGamePhase(board);
-	engine.evalNets[ netInfo.netIdx ]->ComputeFirstLayerValues(board, engine.searchThreadData.nnValues, netInfo.firstLayerValues);
-	int eval = -board.EvaluateBoard(0, engine.searchThreadData, netInfo );
+	engine.evalNets[netInfo.netIdx]->ComputeFirstLayerValues(board, engine.searchThreadData.nnValues, netInfo.firstLayerValues);
+	int eval = board.EvaluateBoard(0, engine.searchThreadData, netInfo, 100);
+	if (board.sideToMove == WHITE)
+		eval = -eval;			/* Make it + strong for black. */
 
 	std::string databaseBuffer;
 	if (abs(eval) != 2001 && engine.dbInfo.InDatabase(board))
@@ -140,6 +143,22 @@ void CheckersGUI::DisplayEvaluation(const Board& board)
 			}
 		}
 
+		if (engine.dbInfo.type == dbType::KR_WIN_LOSS_DRAW && engine.dbInfo.InDatabase(board)) {
+			EGDB_BITBOARD bb;
+			int finish_eval = -board.FinishingEval();	/* negate to make + strong for black. */
+
+			gui_to_kr(board.Bitboards, bb);
+			int result = engine.dbInfo.kr_wld->lookup(engine.dbInfo.kr_wld, &bb, gui_to_kr_color(board.sideToMove), 100);
+			if (result == EGDB_WIN) {
+				databaseBuffer = "db win, finishing eval = " + std::to_string(finish_eval);
+			}
+			else if (result == EGDB_LOSS) {
+				databaseBuffer = "db loss, finishing eval = " + std::to_string(finish_eval);
+			}
+			else if (result == EGDB_DRAW) {
+				databaseBuffer = "db draw";
+			}
+		}
 		if (engine.dbInfo.type == dbType::EXACT_VALUES) {
 			int result = QueryEdsDatabase(board, 0);
 			if (result == 0)
@@ -153,17 +172,21 @@ void CheckersGUI::DisplayEvaluation(const Board& board)
 		}
 	}
 
-	if (board.sideToMove == BLACK) eval = -eval;
-
 	snprintf(scratchBuffer, sizeof(scratchBuffer),
-		"Eval: %d\nWhite : %d   Red : %d\n%s %s",
+		"eval: %d\nnWhite: %d   nBlack: %d\n%s %s\nscores + strong for black\n",
 		eval,
 		board.numPieces[WHITE],
 		board.numPieces[BLACK],
 		databaseBuffer.c_str(),
 		Repetition(board.hashKey, engine.boardHashHistory, 0, engine.transcript.numMoves) ? "(Repetition)" : "");
+	evalstr = scratchBuffer;
+}
 
-	DisplayText(scratchBuffer);
+void CheckersGUI::DisplayEvaluation(const Board& board)
+{
+	std::string evalstr;
+	get_eval_string(board, evalstr);
+	DisplayText(evalstr.c_str());
 }
 
 void CheckersGUI::PastePosition()

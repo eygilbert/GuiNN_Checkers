@@ -8,9 +8,9 @@
 // #define NO_POP_COUNT // for very old processors that have no hardware popcount instruction
 
 #ifdef USE_AVX
-static const char* g_VersionName = "GuiNN Checkers 2.04 avx2";
+static const char* g_VersionName = "GuiNN Checkers 2.05 avx2";
 #else
-static const char* g_VersionName = "GuiNN Checkers 2.04";
+static const char* g_VersionName = "GuiNN Checkers 2.05";
 #endif
 
 const int MAX_GAMEMOVES = 2048;

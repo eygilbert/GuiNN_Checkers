@@ -5,9 +5,10 @@
 // Computes an eval score for a Board.
 
 #include "engine.h"
+#include "kr_db.h"
 
 // return eval relative to board.sideToMove
-int Board::EvaluateBoard(int ply, SearchThreadData& search, const EvalNetInfo& netInfo ) const
+int Board::EvaluateBoard(int ply, SearchThreadData& search, const EvalNetInfo& netInfo, int depth) const
 {
 	// Game is over?        
 	if ((numPieces[WHITE] == 0 && sideToMove == WHITE) || (numPieces[BLACK] == 0 && sideToMove == BLACK)) {
@@ -28,6 +29,25 @@ int Board::EvaluateBoard(int ply, SearchThreadData& search, const EvalNetInfo& n
 	}
 
 	int eval = 0;
+
+	if (engine.dbInfo.type == dbType::KR_WIN_LOSS_DRAW && engine.dbInfo.InDatabase(*this)) {
+		EGDB_BITBOARD bb;
+
+		gui_to_kr(Bitboards, bb);
+		int result = engine.dbInfo.kr_wld->lookup(engine.dbInfo.kr_wld, &bb, gui_to_kr_color(sideToMove), depth <= 3);
+		if (result == EGDB_WIN) {
+			search.displayInfo.databaseNodes++;
+			return(to_rel_score(FinishingEval(), sideToMove) + 400);
+		}
+		else if (result == EGDB_LOSS) {
+			search.displayInfo.databaseNodes++;
+			return(to_rel_score(FinishingEval(), sideToMove) - 400);
+		}
+		else if (result == EGDB_DRAW) {
+			search.displayInfo.databaseNodes++;
+			return(0);
+		}
+	}
 
 	// Probe the W/L/D bitbase
 	if (engine.dbInfo.type == dbType::WIN_LOSS_DRAW && engine.dbInfo.InDatabase(*this))
@@ -98,3 +118,18 @@ int Board::FinishingEval() const
 
 	return eval;
 }
+
+
+int Board::nonincremental_nn_eval(SearchThreadData& search) const
+{
+	EvalNetInfo &netInfo = engine.searchThreadData.stack->netInfo; 
+	netInfo.netIdx = (int)CheckersNet::GetGamePhase(*this);
+	assert(netInfo.firstLayerValues && netInfo.netIdx >= 0);
+	engine.evalNets[netInfo.netIdx]->ComputeFirstLayerValues(*this, engine.searchThreadData.nnValues, netInfo.firstLayerValues);
+	int eval = engine.evalNets[netInfo.netIdx]->GetNNEvalIncremental(netInfo.firstLayerValues, search.nnValues);
+	eval = -SoftClamp(eval / 3, 400, 800); // move it into a better range with rest of evaluation
+
+	 // return sideToMove relative eval
+	return(sideToMove == WHITE) ? eval : -eval;
+}
+

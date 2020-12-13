@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "board.h"
+#include "cb_interface.h"
 #include "movegen.h"
 #include "transcript.h"
 #include "transpositionTable.h"
@@ -52,8 +53,20 @@ struct CheckerboardInterface
 	bool bActive = false;
 	int* pbPlayNow = nullptr;
 	char* infoString = nullptr;
-	int useOpeningBook = 1;
+	int useOpeningBook = CB_BOOK_BEST_MOVES;
 	char db_path[260] = "db_dtw";
 	int enable_wld = 1;
+	int max_dbpieces = 10;
+	int wld_cache_mb = 2048;
+	bool did_egdb_init = false;
+	bool request_egdb_init = false;
 };
+
+inline int to_rel_score(int score, eColor color) {
+	if (color == WHITE)
+		return(score);
+	else
+		return(-score);
+}
+
 extern CheckerboardInterface checkerBoard;

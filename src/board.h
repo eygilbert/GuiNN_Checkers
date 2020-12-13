@@ -68,8 +68,9 @@ struct Board
 	void SetFlags();
 	uint64_t CalcHashKey();
 
-	int EvaluateBoard( int ply, struct SearchThreadData& search, const struct EvalNetInfo& netInfo) const;
+	int EvaluateBoard( int ply, struct SearchThreadData& search, const struct EvalNetInfo& netInfo, int depth) const;
 	int FinishingEval() const;
+	int nonincremental_nn_eval(SearchThreadData& search) const;
 
 	std::string ToString();
 	int FromString( char *text );

@@ -8,9 +8,10 @@
 
 #include <stdlib.h>
 #include <algorithm>
-
+#include "cb_interface.h"
 #include "engine.h"
 #include "guiWindows.h"
+#include "kr_db.h"
 
 // -------------------------------------------------
 // Repetition Testing
@@ -91,7 +92,7 @@ int QuiesceBoard(SearchThreadData& search, int ply, int alpha, int beta )
 	{
 		search.displayInfo.selectiveDepth = std::max(search.displayInfo.selectiveDepth, ply-1 );
 
-		return inBoard.EvaluateBoard( ply-1, search, stack[ply-1].netInfo );
+		return inBoard.EvaluateBoard( ply-1, search, stack[ply-1].netInfo, 0 );
 	}
 
 	// There are jump moves, so we keep searching. 
@@ -196,8 +197,9 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 	const int startAlpha = alpha;
 
 	// Find possible moves (and set a couple variables)
-	const eColor color = stack[ply - 1].board.sideToMove;
-	moveList.FindMoves( stack[ply-1].board );
+	Board &board_in = stack[ply - 1].board;
+	const eColor color_in = board_in.sideToMove;
+	moveList.FindMoves(board_in);
 
 	if (moveList.numMoves == 0) { 
 		return -WinScore( ply - 1 ); // If you can't move, you've already lost the game
@@ -205,6 +207,27 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 	alpha = std::max(alpha, -WinScore(ply));
 	if (alpha >= beta) return alpha;
 	if (alpha >= WinScore(ply)) return alpha; // have a guaranteed faster win already, so don't waste time searching
+
+	/* Check for egdb cutoff at interior nodes. */
+	if (ply > 2 && engine.dbInfo.type == dbType::KR_WIN_LOSS_DRAW && engine.dbInfo.InDatabase(board_in)) {
+		int egdb_score;
+		EGDB_BITBOARD bb;
+
+		gui_to_kr(board_in.Bitboards, bb);
+		int result = engine.dbInfo.kr_wld->lookup(engine.dbInfo.kr_wld, &bb, gui_to_kr_color(color_in), depth <= 3);
+		if (result == EGDB_WIN) {
+			search.displayInfo.databaseNodes++;
+			egdb_score = to_rel_score(board_in.FinishingEval(), color_in) + 400;
+			if (egdb_score >= beta)
+				return(beta);
+			if (egdb_score >= alpha)
+				alpha = egdb_score;
+		}
+		else if (result == EGDB_DRAW) {
+			search.displayInfo.databaseNodes++;
+			return(0);
+		}
+	}
 
 	// Use killer as predictedBest if we don't have it from some other method
 	if (predictedBestmove == NO_MOVE && moveList.numJumps == 0 && killerMove != NO_MOVE) {
@@ -236,7 +259,7 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 
 		if (ply == 1) 
 		{
-			const int newEval = (color == WHITE) ? alpha : -alpha; // eval from red's POV
+			const int newEval = (color_in == WHITE) ? alpha : -alpha; // eval from red's POV
 			FirstPlyMoveUpdate( search, newEval, bestmove, movesSearched );
 		}
 			 
@@ -267,7 +290,7 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 		if (moveList.numJumps > 0 &&
 			(isPV || (ply > 1 && stack[ply - 1].moveList.numJumps > 0)))
 			nextDepth++; // Any jump "recapture" or jump on PV
-		else if (nextDepth == 0 && board.Bitboards.GetJumpers(color))
+		else if (nextDepth == 0 && board.Bitboards.GetJumpers(color_in))
 			nextDepth++; // On leaf when there is a jump threatened
 	
 		if (ply > 1 && board.reversibleMoves > 78 && board.Bitboards.GetJumpers(board.sideToMove) == 0) 
@@ -285,6 +308,7 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 	    }
         else 
 		{	
+
 			// If this isn't the max depth continue to look ahead 
 			Move nextBestmove = NO_MOVE;
 			int boardEval = INVALID_VAL;
@@ -304,7 +328,7 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 				// DATABASE : Stop searching if we know the exact value from the database
 				if (engine.dbInfo.InDatabase( board ) )
 				{
-					if (boardEval == INVALID_VAL) { boardEval = -board.EvaluateBoard(ply, search, stack[ply].netInfo ); }
+					if (boardEval == INVALID_VAL) { boardEval = -board.EvaluateBoard(ply, search, stack[ply].netInfo, nextDepth); }
 					if (boardEval == 0 || (engine.dbInfo.type == dbType::EXACT_VALUES && abs(boardEval) > MIN_WIN_SCORE) )
 						value = boardEval;
 				}
@@ -315,7 +339,7 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 					const int evalMargin = 28;
 					const int verifyDepth = std::max(nextDepth - 4, 1);
 					if (boardEval == INVALID_VAL) {
-						boardEval = -board.EvaluateBoard(ply, search, stack[ply].netInfo );
+						boardEval = -board.EvaluateBoard(ply, search, stack[ply].netInfo, nextDepth);
 						if (ttEntry) { ttEntry->m_boardEval = boardEval; }
 					}
 
@@ -419,8 +443,10 @@ BestMoveInfo ComputerMove( Board &InBoard, SearchThreadData& search )
 	search.ClearStack();
 	search.stack[0].netInfo.netIdx = -1; // Set to invalid net to force initial computation
 	memcpy(search.boardHashHistory, engine.boardHashHistory, sizeof(search.boardHashHistory));
+	search.displayInfo.eval = BOOK_INVALID_VALUE;
+	if (checkerBoard.useOpeningBook != CB_BOOK_NONE)
+		search.displayInfo.eval = engine.openingBook->GetMove( InBoard, bestmove );
 
-	search.displayInfo.eval = engine.openingBook->GetMove( InBoard, bestmove );
 	if ( bestmove != NO_MOVE) {
 		doMove = bestmove;
 	}

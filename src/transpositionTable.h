@@ -172,12 +172,9 @@ struct TranspositionTable
 
 	static void CreateHashFunction()
 	{
-		// Note : the hash function is also used for opening book, so if it change the opening book won't find positions
-		for (int i = 0; i < NUM_BOARD_SQUARES; i++)
-			for (int x = 0; x < NUM_PIECE_TYPES; x++)
-			{
-				HashFunction[i][x] = Rand64();
-			}
-		HashSTM = Rand64();
+		/* Changed to a compile time table because of differences in rand() seeding between
+		 * various runtime environments.
+		 */
+		HashSTM = HashFunction[0][0];
 	}
 };
