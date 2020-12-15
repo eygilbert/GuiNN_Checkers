@@ -103,6 +103,8 @@ struct TBucket
 		TEntry* bestEntry = &entries[0];
 		for (int i = 0; i < ENTRIES_PER_BUCKET; i++)
 		{
+			int score;
+
 			// If we find a match or empty entry, use it
 			if (entries[i].IsBoard(hashKey) || entries[i].m_checksum == 0)
 			{
@@ -111,13 +113,16 @@ struct TBucket
 			}
 			
 			// Otherwise use the best entry based on depth and failtype
-			int ageDiff = abs(entries[i].Age() - searchAge);
-			int score = - entries[i].m_depth 
-						- (entries[i].FailType() == TEntry::TT_EXACT) ? 10 : 0;
-						+ (ageDiff > 1) ? 100 : (ageDiff == 1) ? 4 : 0;
+			int ageDiff = searchAge - entries[i].Age();
+			if (ageDiff < 0)
+				ageDiff += 64;
+
+			score = -entries[i].m_depth;
+			score -= (entries[i].FailType() == TEntry::TT_EXACT) ? 10 : 0;
+			score += (ageDiff > 1) ? 100 : (ageDiff == 1) ? 4 : 0;
 			if (score > bestScore)
 			{
-				score = bestScore;
+				bestScore = score;
 				bestEntry = &entries[i];
 			}
 		}
@@ -160,6 +165,8 @@ struct TranspositionTable
 		sizeMb = _sizeMb;
 		numBuckets = ((size_t)sizeMb * (1 << 20)) / sizeof(TBucket);
 		buckets = AlignedAllocUtil<TBucket>(numBuckets, 64);
+		if (buckets != nullptr)
+			Clear();
 
 		return (buckets != nullptr);
 	}

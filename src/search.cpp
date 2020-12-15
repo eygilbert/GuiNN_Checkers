@@ -426,7 +426,7 @@ BestMoveInfo ComputerMove( Board &InBoard, SearchThreadData& search )
 	int LastEval = 0;
 	Move bestmove = NO_MOVE;
 	Move doMove = NO_MOVE;
-	engine.ttAge = (engine.ttAge + 1) % 63; // fit into 6 bits to store in tt
+	engine.ttAge = (engine.ttAge + 1) & 63; // fit into 6 bits to store in tt
 	
 	MoveList& moveList = search.stack[1].moveList;
 
