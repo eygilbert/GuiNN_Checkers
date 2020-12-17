@@ -145,15 +145,20 @@ void CheckersGUI::get_eval_string(const Board& board, std::string &evalstr)
 
 		if (engine.dbInfo.type == dbType::KR_WIN_LOSS_DRAW && engine.dbInfo.InDatabase(board)) {
 			EGDB_BITBOARD bb;
-			int finish_eval = -board.FinishingEval();	/* negate to make + strong for black. */
 
 			gui_to_kr(board.Bitboards, bb);
 			int result = engine.dbInfo.kr_wld->lookup(engine.dbInfo.kr_wld, &bb, gui_to_kr_color(board.sideToMove), 100);
 			if (result == EGDB_WIN) {
-				databaseBuffer = "db win, finishing eval = " + std::to_string(finish_eval);
+				if (board.sideToMove == WHITE)
+					databaseBuffer = "white win";
+				else
+					databaseBuffer = "black win";
 			}
 			else if (result == EGDB_LOSS) {
-				databaseBuffer = "db loss, finishing eval = " + std::to_string(finish_eval);
+				if (board.sideToMove == BLACK)
+					databaseBuffer = "white win";
+				else
+					databaseBuffer = "black win";
 			}
 			else if (result == EGDB_DRAW) {
 				databaseBuffer = "db draw";
@@ -173,7 +178,7 @@ void CheckersGUI::get_eval_string(const Board& board, std::string &evalstr)
 	}
 
 	snprintf(scratchBuffer, sizeof(scratchBuffer),
-		"eval: %d\nnWhite: %d   nBlack: %d\n%s %s\nscores + strong for black\n",
+		"eval: %d\nnWhite: %d   nBlack: %d\n%s %s\n",
 		eval,
 		board.numPieces[WHITE],
 		board.numPieces[BLACK],

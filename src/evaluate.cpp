@@ -37,11 +37,11 @@ int Board::EvaluateBoard(int ply, SearchThreadData& search, const EvalNetInfo& n
 		int result = engine.dbInfo.kr_wld->lookup(engine.dbInfo.kr_wld, &bb, gui_to_kr_color(sideToMove), depth <= 3);
 		if (result == EGDB_WIN) {
 			search.displayInfo.databaseNodes++;
-			return(to_rel_score(FinishingEval(), sideToMove) + 400);
+			return(to_rel_score(dbWinEval(sideToMove == BLACK ? BLACKWIN : WHITEWIN), sideToMove) + 400);
 		}
 		else if (result == EGDB_LOSS) {
 			search.displayInfo.databaseNodes++;
-			return(to_rel_score(FinishingEval(), sideToMove) - 400);
+			return(to_rel_score(dbWinEval(sideToMove == BLACK ? WHITEWIN : BLACKWIN), sideToMove) - 400);
 		}
 		else if (result == EGDB_DRAW) {
 			search.displayInfo.databaseNodes++;
@@ -52,20 +52,19 @@ int Board::EvaluateBoard(int ply, SearchThreadData& search, const EvalNetInfo& n
 	// Probe the W/L/D bitbase
 	if (engine.dbInfo.type == dbType::WIN_LOSS_DRAW && engine.dbInfo.InDatabase(*this))
 	{
-		// Use a heuristic eval to help finish off won games
-		eval = FinishingEval();
-
 		int Result = QueryGuiDatabase(*this);
+
+		// Use a heuristic eval to help finish off won games
 		if (Result <= 2) {
 			search.displayInfo.databaseNodes++;
-			if (Result == dbResult::WHITEWIN) eval += 400;
-			if (Result == dbResult::BLACKWIN) eval -= 400;
+			if (Result == dbResult::WHITEWIN) eval = dbWinEval(Result) + 400;
+			if (Result == dbResult::BLACKWIN) eval = dbWinEval(Result) - 400;
 			if (Result == dbResult::DRAW) return 0;
 		}
 	}
 	else if (Bitboards.GetCheckers() == 0)
 	{
-		eval = FinishingEval(); // All kings also uses heuristic eval
+		eval = AllKingsEval();
 	}
 	else
 	{
@@ -85,10 +84,10 @@ int Board::EvaluateBoard(int ply, SearchThreadData& search, const EvalNetInfo& n
 	return (sideToMove == WHITE) ? eval : -eval;
 }
 
-// For 1. won positions in database 2. positions with all kings to help finish the game. 
+// For positions with all kings to help finish the game. 
 // (TODO? Could train a small net to handle this using some distance to win metric in targetVal.)
 // (TODO? generalize to use for any lop-sided position that should be easy win.)
-int Board::FinishingEval() const
+int Board::AllKingsEval() const
 {
 	const uint32_t WK = Bitboards.K & Bitboards.P[WHITE];
 	const uint32_t BK = Bitboards.K & Bitboards.P[BLACK];
@@ -119,6 +118,50 @@ int Board::FinishingEval() const
 	return eval;
 }
 
+int Board::dbWinEval(int dbresult) const
+{
+	assert(dbresult == WHITEWIN || dbresult == BLACKWIN);
+	const uint32_t wm = ~Bitboards.K & Bitboards.P[WHITE];
+	const uint32_t bm = ~Bitboards.K & Bitboards.P[BLACK];
+	const uint32_t WK = Bitboards.K & Bitboards.P[WHITE];
+	const uint32_t BK = Bitboards.K & Bitboards.P[BLACK];
+	const int KingCount[2] = { BitCount(BK), BitCount(WK) };
+
+	int eval = 0;
+	eval += (KingCount[WHITE] - KingCount[BLACK]) * 25;
+	eval += (numPieces[WHITE] - numPieces[BLACK]) * 75;
+
+	// encourage the winning side to trade down
+	eval += (numPieces[WHITE] - numPieces[BLACK]) * (240 - TotalPieces() * 20);
+
+	// encourage pushing kings to edges (except 2 corner)
+	eval += (BitCount(WK & SINGLE_EDGE) - BitCount(BK & SINGLE_EDGE)) * -10;
+
+	// encourage kings in the center
+	eval += (BitCount(WK & CENTER_8) - BitCount(BK & CENTER_8)) * 4;
+
+	// encourage advancement of men on the winning side.
+	if (dbresult == WHITEWIN) {
+		if (wm)
+			eval += white_tempo(wm);
+
+		// if equal number of pieces, encourage advancement of men on the losing side.
+		if (numPieces[WHITE] == numPieces[BLACK])
+			eval += black_tempo(bm);
+		if (BK & DOUBLE_CORNER)
+			eval -= 12; // encourage losing side to use double corner
+	}
+	else if (dbresult == BLACKWIN) {
+		if (bm)
+			eval -= black_tempo(bm);
+		if (numPieces[WHITE] == numPieces[BLACK])
+			eval -= white_tempo(wm);
+		if (WK & DOUBLE_CORNER)
+			eval += 12;
+	}
+
+	return eval;
+}
 
 int Board::nonincremental_nn_eval(SearchThreadData& search) const
 {

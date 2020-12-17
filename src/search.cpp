@@ -217,11 +217,9 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 		int result = engine.dbInfo.kr_wld->lookup(engine.dbInfo.kr_wld, &bb, gui_to_kr_color(color_in), depth <= 3);
 		if (result == EGDB_WIN) {
 			search.displayInfo.databaseNodes++;
-			egdb_score = to_rel_score(board_in.FinishingEval(), color_in) + 400;
+			egdb_score = to_rel_score(board_in.dbWinEval(color_in == WHITE ? WHITEWIN : BLACKWIN), color_in) + 400;
 			if (egdb_score >= beta)
 				return(beta);
-			if (egdb_score >= alpha)
-				alpha = egdb_score;
 		}
 		else if (result == EGDB_DRAW) {
 			search.displayInfo.databaseNodes++;
@@ -334,7 +332,7 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 				}
 
 				// PRUNING : Prune this move if the eval is enough above beta and shallower verification search passes
-				if (!isPV && value == INVALID_VAL && beta > -1500)
+				if (!isPV && value == INVALID_VAL && beta > -1500 && (!engine.dbInfo.loaded || board.TotalPieces() > engine.dbInfo.numPieces))
 				{
 					const int evalMargin = 28;
 					const int verifyDepth = std::max(nextDepth - 4, 1);

@@ -95,7 +95,7 @@ eGamePhase CheckersNet::GetGamePhase(const Board& board)
 
 bool CheckersNet::IsActive(const Board& board) const
 {
-	if (board.Bitboards.GetCheckers() == 0) return false; // all kings uses hand-crafted "FinishingEval"
+	if (board.Bitboards.GetCheckers() == 0) return false; // all kings uses hand-crafted "AllKingsEval"
 	
 	return (GetGamePhase(board) == gamePhase);
 }

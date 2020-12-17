@@ -69,7 +69,8 @@ struct Board
 	uint64_t CalcHashKey();
 
 	int EvaluateBoard( int ply, struct SearchThreadData& search, const struct EvalNetInfo& netInfo, int depth) const;
-	int FinishingEval() const;
+	int AllKingsEval() const;
+	int dbWinEval(int dbresult) const;
 	int nonincremental_nn_eval(SearchThreadData& search) const;
 
 	std::string ToString();

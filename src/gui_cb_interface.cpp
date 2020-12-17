@@ -58,7 +58,7 @@ void SetSearchTimeLimits( double maxTime, int info, int moreInfo )
 // Returns a game result based on the previous search (and maybe the ones before that)
 int GetAdjucationValue( const BestMoveInfo& searchMove, int& numDrawScoreMoves )
 {
-	const int WinEval = 10000; // NOTE : Super high value to turn off adjucation.. need to verify it can win all these first
+	const int WinEval = 400;
 	const int DrawEval = (engine.transcript.numMoves > 150) ? 45 : 11;
 
 	int retVal = CB_UNKNOWN;

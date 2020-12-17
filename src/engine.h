@@ -69,4 +69,18 @@ inline int to_rel_score(int score, eColor color) {
 		return(-score);
 }
 
+inline int black_tempo(uint32_t bm)
+{
+	return(4 * BitCount((MASK_RANK[4] | MASK_RANK[5] | MASK_RANK[6]) & (bm)) + 
+			2 * BitCount((MASK_RANK[2] | MASK_RANK[3] | MASK_RANK[6]) & (bm)) + 
+			BitCount((MASK_RANK[1] | MASK_RANK[3] | MASK_RANK[5]) & (bm)));
+}
+
+inline int white_tempo(uint32_t wm)
+{
+	return(4 * BitCount((MASK_RANK[3] | MASK_RANK[2] | MASK_RANK[1]) & (wm)) + 
+			2 * BitCount((MASK_RANK[5] | MASK_RANK[4] | MASK_RANK[1]) & (wm)) + 
+			BitCount((MASK_RANK[6] | MASK_RANK[4] | MASK_RANK[2]) & (wm)));
+}
+
 extern CheckerboardInterface checkerBoard;
