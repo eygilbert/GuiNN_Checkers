@@ -139,10 +139,18 @@ int WINAPI getmove
 	}
 
 	// We get only get a new board, so add the board to repetition history
-	engine.boardHashHistory[engine.transcript.numMoves] = engine.board.CalcHashKey();
-	// Need to look at old board to try to find if opponent's move was reversible
-	if (engine.board.TotalPieces() == oldBoard.TotalPieces() && engine.board.Bitboards.GetCheckers() == oldBoard.Bitboards.GetCheckers()) {
-		engine.board.reversibleMoves++;
+	uint64_t key = engine.board.CalcHashKey();
+	if (engine.transcript.numMoves >= 1 && engine.boardHashHistory[engine.transcript.numMoves - 1] == key)
+		--engine.transcript.numMoves;		// Mode Autoplay
+	else if (engine.transcript.numMoves >= 2 && engine.boardHashHistory[engine.transcript.numMoves - 2] == key)
+		engine.transcript.numMoves -= 2;	// Repeatedly hitting "Play" in analysis mode
+	else {
+		engine.boardHashHistory[engine.transcript.numMoves] = key;
+
+		// Need to look at old board to try to find if opponent's move was reversible
+		if (engine.board.TotalPieces() == oldBoard.TotalPieces() && engine.board.Bitboards.GetCheckers() == oldBoard.Bitboards.GetCheckers()) {
+			engine.board.reversibleMoves++;
+		}
 	}
 
 	lastTotalPieces = engine.board.TotalPieces();
