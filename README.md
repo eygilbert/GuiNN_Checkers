@@ -3,4 +3,9 @@ This is a fork of Jonathan Kreuzer's checkers program. The purpose of the fork i
 
 To make debugging convenient, the project includes a barebones CheckerBoard installation. When the DLL is compiled, the file goes directly into the CheckerBoard\engines directory. Running the debugger in Visual Studio launches CheckerBoard.
 
-See http://www.github.com/jonkr2/GuiNN_Checkers
+You can find install files for the compiled DLLs and related binaries here:
+
+[GuiNN_Checkers Version 2.05 DLL install for 64-bit Windows (updated 12/19/2020)](http://www.edgilbert.org/EnglishCheckers/downloads/gui_nn64_2.05_setup.exe)
+
+[GuiNN_Checkers Version 2.05 DLL install for 32-bit Windows (updated 12/19/2020)](http://www.edgilbert.org/EnglishCheckers/downloads/gui_nn32_2.05_setup.exe)
+
