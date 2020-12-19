@@ -54,7 +54,11 @@ struct CheckerboardInterface
 	int* pbPlayNow = nullptr;
 	char* infoString = nullptr;
 	int useOpeningBook = CB_BOOK_BEST_MOVES;
+#ifdef _WINDLL
+	char db_path[260] = "db";
+#else
 	char db_path[260] = "db_dtw";
+#endif
 	int enable_wld = 1;
 	int max_dbpieces = 10;
 	int wld_cache_mb = 2048;

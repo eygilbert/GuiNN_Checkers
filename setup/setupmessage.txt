@@ -1,0 +1,1 @@
+When prompted to "Select a destination location", select the directory where CheckerBoard is installed.
