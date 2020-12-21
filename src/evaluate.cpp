@@ -37,11 +37,13 @@ int Board::EvaluateBoard(int ply, SearchThreadData& search, const EvalNetInfo& n
 		int result = engine.dbInfo.kr_wld->lookup(engine.dbInfo.kr_wld, &bb, gui_to_kr_color(sideToMove), depth <= 3);
 		if (result == EGDB_WIN) {
 			search.displayInfo.databaseNodes++;
-			return(to_rel_score(dbWinEval(sideToMove == BLACK ? BLACKWIN : WHITEWIN), sideToMove) + 400);
+			eval = dbWinEval(sideToMove == BLACK ? BLACKWIN : WHITEWIN);
+			return(to_rel_score(eval, sideToMove));
 		}
 		else if (result == EGDB_LOSS) {
 			search.displayInfo.databaseNodes++;
-			return(to_rel_score(dbWinEval(sideToMove == BLACK ? WHITEWIN : BLACKWIN), sideToMove) - 400);
+			eval = dbWinEval(sideToMove == BLACK ? WHITEWIN : BLACKWIN);
+			return(to_rel_score(eval, sideToMove));
 		}
 		else if (result == EGDB_DRAW) {
 			search.displayInfo.databaseNodes++;
@@ -57,8 +59,8 @@ int Board::EvaluateBoard(int ply, SearchThreadData& search, const EvalNetInfo& n
 		// Use a heuristic eval to help finish off won games
 		if (Result <= 2) {
 			search.displayInfo.databaseNodes++;
-			if (Result == dbResult::WHITEWIN) eval = dbWinEval(Result) + 400;
-			if (Result == dbResult::BLACKWIN) eval = dbWinEval(Result) - 400;
+			if (Result == dbResult::WHITEWIN) eval = dbWinEval(Result);
+			if (Result == dbResult::BLACKWIN) eval = dbWinEval(Result);
 			if (Result == dbResult::DRAW) return 0;
 		}
 	}
@@ -81,7 +83,7 @@ int Board::EvaluateBoard(int ply, SearchThreadData& search, const EvalNetInfo& n
 	}
 
 	// return sideToMove relative eval
-	return (sideToMove == WHITE) ? eval : -eval;
+	return(to_rel_score(eval, sideToMove));
 }
 
 // For positions with all kings to help finish the game. 
@@ -121,6 +123,7 @@ int Board::AllKingsEval() const
 int Board::dbWinEval(int dbresult) const
 {
 	assert(dbresult == WHITEWIN || dbresult == BLACKWIN);
+	const int dbwin_offset = 400;
 	const uint32_t wm = ~Bitboards.K & Bitboards.P[WHITE];
 	const uint32_t bm = ~Bitboards.K & Bitboards.P[BLACK];
 	const uint32_t WK = Bitboards.K & Bitboards.P[WHITE];
@@ -142,6 +145,7 @@ int Board::dbWinEval(int dbresult) const
 
 	// encourage advancement of men on the winning side.
 	if (dbresult == WHITEWIN) {
+		eval += dbwin_offset;
 		if (wm)
 			eval += white_tempo(wm);
 
@@ -152,6 +156,7 @@ int Board::dbWinEval(int dbresult) const
 			eval -= 12; // encourage losing side to use double corner
 	}
 	else if (dbresult == BLACKWIN) {
+		eval -= dbwin_offset;
 		if (bm)
 			eval -= black_tempo(bm);
 		if (numPieces[WHITE] == numPieces[BLACK])
@@ -173,6 +178,6 @@ int Board::nonincremental_nn_eval(SearchThreadData& search) const
 	eval = -SoftClamp(eval / 3, 400, 800); // move it into a better range with rest of evaluation
 
 	 // return sideToMove relative eval
-	return(sideToMove == WHITE) ? eval : -eval;
+	return(to_rel_score(eval, sideToMove));
 }
 

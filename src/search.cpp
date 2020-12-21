@@ -217,7 +217,11 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 		int result = engine.dbInfo.kr_wld->lookup(engine.dbInfo.kr_wld, &bb, gui_to_kr_color(color_in), depth <= 3);
 		if (result == EGDB_WIN) {
 			search.displayInfo.databaseNodes++;
-			egdb_score = to_rel_score(board_in.dbWinEval(color_in == WHITE ? WHITEWIN : BLACKWIN), color_in) + 400;
+			egdb_score = board_in.dbWinEval(color_in == WHITE ? WHITEWIN : BLACKWIN);
+			egdb_score = to_rel_score(egdb_score, color_in);
+
+			// This might be aggressive, as it might be possible for the score to temporarily go down by
+			// searching deeper. But it's a db win, and the endgame heuristic score will usually only go up.
 			if (egdb_score >= beta)
 				return(beta);
 		}

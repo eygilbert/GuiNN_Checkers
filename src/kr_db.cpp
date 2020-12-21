@@ -6,7 +6,10 @@ void log_msg(char *msg)
 {
 }
 
-
+/*
+ * Open an endgame database it has not been done yet.
+ * If a db setting changed, close any open db and the re-open with the new settings.
+ */
 void init_egdb(char msg[1024])
 {
 	if (!checkerBoard.did_egdb_init || checkerBoard.request_egdb_init) {
