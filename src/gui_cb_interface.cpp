@@ -151,6 +151,8 @@ int WINAPI getmove
 		if (engine.board.TotalPieces() == oldBoard.TotalPieces() && engine.board.Bitboards.GetCheckers() == oldBoard.Bitboards.GetCheckers()) {
 			engine.board.reversibleMoves++;
 		}
+		else
+			engine.board.reversibleMoves = 0;
 	}
 
 	lastTotalPieces = engine.board.TotalPieces();
