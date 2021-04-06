@@ -7,7 +7,7 @@ You can find install files for the compiled DLLs and related binaries at the lin
 
 If the install files do not download when you click on the links, it is probably because your browser will not let you download an executable file from a secure page (GitHub is a secure site -- uses https). Either copy/paste the link into the address box of another browser window, or use a different browser.
 
-[GuiNN_Checkers Version 2.06 DLL install for 64-bit Windows (updated 12/19/2020)](http://www.edgilbert.org/EnglishCheckers/downloads/gui_nn64_2.06_setup.exe)
+[GuiNN_Checkers Version 2.06 DLL install for 64-bit Windows (updated 4/6/2021)](http://www.edgilbert.org/EnglishCheckers/downloads/gui_nn64_2.06_setup.exe)
 
-[GuiNN_Checkers Version 2.06 DLL install for 32-bit Windows (updated 12/19/2020)](http://www.edgilbert.org/EnglishCheckers/downloads/gui_nn32_2.06_setup.exe)
+[GuiNN_Checkers Version 2.06 DLL install for 32-bit Windows (updated 4/6/2021)](http://www.edgilbert.org/EnglishCheckers/downloads/gui_nn32_2.06_setup.exe)
 
