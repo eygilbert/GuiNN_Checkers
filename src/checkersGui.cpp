@@ -46,11 +46,13 @@ void CheckersGUI::InitMenuItems( HMENU menu )
 void CheckersGUI::ProcessMenuCommand(WORD cmd, HWND hwnd)
 {
 	WORD customCmd = cmd - CUSTOM_MENU_CMD_BASE;
+	char tempBuf[256] = { 0 };
 	switch (customCmd)
 	{
 	case MENU_SAVE_BINARY_NETS:
-		SaveBinaryNets("Nets.gnn");
-		DisplayText("Saved Binary Nets to \"Nets.gnn\"");
+		SaveBinaryNets( engine.binaryNetFile.c_str() );
+		snprintf(tempBuf, sizeof(tempBuf), "Saved Binary Nets to \"%s\"", engine.binaryNetFile.c_str());
+		DisplayText(tempBuf);
 		break;
 
 	case MENU_EXPORT_TRAINING:
@@ -178,7 +180,7 @@ void CheckersGUI::get_eval_string(const Board& board, std::string &evalstr)
 	}
 
 	snprintf(scratchBuffer, sizeof(scratchBuffer),
-		"eval: %d\nnWhite: %d   nBlack: %d\n%s %s\n",
+		"eval: %d\nnumWhite: %d   numBlack: %d\n%s %s\n",
 		eval,
 		board.numPieces[WHITE],
 		board.numPieces[BLACK],

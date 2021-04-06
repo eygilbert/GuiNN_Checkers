@@ -39,11 +39,14 @@ struct TEntry
 
 				switch (FailType())
 				{
-				case TT_EXACT: value = tempVal;  // Exact value
+				case TT_EXACT: 
+					value = tempVal;
 					break;
-				case TT_FAIL_LOW: if (tempVal <= alpha) value = tempVal; // Alpha Bound (check to make sure it's usuable)
+				case TT_FAIL_LOW: 
+					if (tempVal <= alpha) value = tempVal; // Alpha Bound (check to make sure it's usuable)
 					break;
-				case TT_FAIL_HIGH: if (tempVal >= beta) value = tempVal; // Beta Bound (check to make sure it's usuable)
+				case TT_FAIL_HIGH: 
+					if (tempVal >= beta) value = tempVal; // Beta Bound (check to make sure it's usuable)
 					break;
 				}
 			}
@@ -88,6 +91,13 @@ struct TEntry
 
 	inline uint8_t FailType() { return m_ageAndFailtype >> 6; }
 	inline uint8_t Age() { return (m_ageAndFailtype & 63); }
+
+	int inline GetTestEval()
+	{
+		if (m_searchEval == INVALID_VAL) { return m_boardEval; }
+		bool preferSearchEval = (FailType() == TT_EXACT || (FailType() == TT_FAIL_HIGH && m_searchEval > m_boardEval) || (FailType() == TT_FAIL_LOW && m_searchEval < m_boardEval));
+		return preferSearchEval ? m_searchEval : m_boardEval;
+	}
 };
 
 // Buckets of entries. Choose which entry to overwrite, if they are all filled. Mainly helpful in case of ttable saturation.

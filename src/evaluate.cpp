@@ -72,7 +72,7 @@ int Board::EvaluateBoard(int ply, SearchThreadData& search, const EvalNetInfo& n
 	{
 		// NEURAL NET EVAL
 		assert(netInfo.firstLayerValues && netInfo.netIdx >= 0);
-		eval = engine.evalNets[netInfo.netIdx]->GetNNEvalIncremental(netInfo.firstLayerValues, search.nnValues);
+		eval = engine.evalNets[netInfo.netIdx]->GetSumIncremental(netInfo.firstLayerValues, search.nnValues);
 		eval = -SoftClamp(eval / 3, 400, 800); // move it into a better range with rest of evaluation
 
 		// surely winning material advantage?
@@ -166,18 +166,5 @@ int Board::dbWinEval(int dbresult) const
 	}
 
 	return eval;
-}
-
-int Board::nonincremental_nn_eval(SearchThreadData& search) const
-{
-	EvalNetInfo &netInfo = engine.searchThreadData.stack->netInfo; 
-	netInfo.netIdx = (int)CheckersNet::GetGamePhase(*this);
-	assert(netInfo.firstLayerValues && netInfo.netIdx >= 0);
-	engine.evalNets[netInfo.netIdx]->ComputeFirstLayerValues(*this, engine.searchThreadData.nnValues, netInfo.firstLayerValues);
-	int eval = engine.evalNets[netInfo.netIdx]->GetNNEvalIncremental(netInfo.firstLayerValues, search.nnValues);
-	eval = -SoftClamp(eval / 3, 400, 800); // move it into a better range with rest of evaluation
-
-	 // return sideToMove relative eval
-	return(to_rel_score(eval, sideToMove));
 }
 

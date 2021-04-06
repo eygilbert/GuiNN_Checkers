@@ -13,6 +13,11 @@
 #include "guiWindows.h"
 #include "kr_db.h"
 
+const int kPruneVerifyDepthReduction = 4;
+const int kPruneEvalMargin = 28;
+
+const int kLmrMoveCount = 3;
+
 // -------------------------------------------------
 // Repetition Testing
 // -------------------------------------------------
@@ -299,7 +304,7 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 		{ 
 			value = 0;  // draw by 40-move rule value.. Not sure actual rules checkerboard calls draws this way sometimes though
 		}
-		else if (nextDepth >= 1 && ply > 1 && Repetition(board.hashKey, search.boardHashHistory, engine.transcript.numMoves - 24, engine.transcript.numMoves + ply))
+		else if (nextDepth >= 1 && ply > 1 && Repetition(board.hashKey, search.boardHashHistory, engine.transcript.numMoves + ply - board.reversibleMoves, engine.transcript.numMoves + ply))
 		{
 			value = 0; 	// If this is the repetition of a position that has occured already in the search, return a draw score
 		}
@@ -338,18 +343,17 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
 				// PRUNING : Prune this move if the eval is enough above beta and shallower verification search passes
 				if (!isPV && value == INVALID_VAL && beta > -1500 && (!engine.dbInfo.loaded || board.TotalPieces() > engine.dbInfo.numPieces))
 				{
-					const int evalMargin = 28;
-					const int verifyDepth = std::max(nextDepth - 4, 1);
 					if (boardEval == INVALID_VAL) {
 						boardEval = -board.EvaluateBoard(ply, search, stack[ply].netInfo, nextDepth);
 						if (ttEntry) { ttEntry->m_boardEval = boardEval; }
 					}
 
-					if (boardEval >= beta + evalMargin )
+					if (boardEval >= beta + kPruneEvalMargin)
 					{
-						int verifyValue = -ABSearch( search, ply + 1, verifyDepth, -(beta + evalMargin + 1), -(beta + evalMargin), false, nextBestmove);
+						const int verifyDepth = std::max(nextDepth - kPruneVerifyDepthReduction, 1);
+						int verifyValue = -ABSearch( search, ply + 1, verifyDepth, -(beta + kPruneEvalMargin + 1), -(beta + kPruneEvalMargin), false, nextBestmove);
 						if (verifyValue == -TIMEOUT) return TIMEOUT;
-						if (verifyValue > beta + evalMargin) value = verifyValue;
+						if (verifyValue > beta + kPruneEvalMargin) value = verifyValue;
 					}
 				}
 			}
@@ -358,7 +362,7 @@ int ABSearch( SearchThreadData& search, int32_t ply, int32_t depth, int32_t alph
             if (value == INVALID_VAL)
 			{
 				// 1-ply LMR when not on pv
-				const bool doLMR = !isPV && moveList.numJumps == 0 && movesSearched > 2;
+				const bool doLMR = !isPV && moveList.numJumps == 0 && movesSearched >= kLmrMoveCount;
 
 				// Principal Variation Search - if this isn't first move on PV, use a search window width of 1
 				if (!isPV || movesSearched > 1)
@@ -499,7 +503,8 @@ BestMoveInfo ComputerMove( Board &InBoard, SearchThreadData& search )
 				}
 				else
 				{
-					if (abs(search.displayInfo.eval) < 3000) { LastEval = search.displayInfo.eval; }
+					// Replace TIMEOUT with eval from previously completed search
+					if (abs(search.displayInfo.eval) < 3000) { LastEval = (InBoard.sideToMove == BLACK) ? -search.displayInfo.eval : search.displayInfo.eval; }
 					break;
 				}
 
@@ -513,7 +518,9 @@ BestMoveInfo ComputerMove( Board &InBoard, SearchThreadData& search )
 		}
 	}
 
-	if (checkerBoard.bActive && doMove == NO_MOVE) doMove = moveList.moves[ 0 ];
+	if (checkerBoard.bActive && doMove == NO_MOVE) {
+		doMove = moveList.moves[0];
+	}
 
 	if (!engine.bStopThinking) {
 		RunningDisplay(search.displayInfo, doMove, 0);

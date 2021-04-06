@@ -1,6 +1,6 @@
 // GuiNN Checkers 2.0
 // by Jonathan Kreuzer
-// with contributions by Ed Trice and Ed Gilbert
+// with contributions by Ed Gilbert and Ed Trice
 // copyright 2005, 2020
 // http://www.3dkingdoms.com/checkers.htm
 //
@@ -178,7 +178,7 @@ void RunningDisplay(SearchInfo& displayInfo, const Move& bestMove, bool bSearchi
 		j += sprintf(sTemp + j, "\n");
 
 	j += sprintf(sTemp + j,
-		"Move: %s   Time: %.2fs   Speed %d KN/s   Nodes: %s (db: %s)",
+		"Move: %s   Time: %.2fs   Speed %d KN/s   Nodes: %s (db: %s) ",
 		Transcript::GetMoveString(LastBest).c_str(),
 		seconds,
 		nps,
@@ -271,7 +271,10 @@ void Engine::Init(char* status_str)
 
 	searchThreadData.historyTable.Clear();
 
-	const int firstLayerOutputCount = (evalNets.size() > 0 && evalNets[0]) ? evalNets[0]->network.GetLayer(0)->outputCount : kMaxValuesInLayer;
+	int firstLayerOutputCount = 0;
+	for (auto net : evalNets)
+		firstLayerOutputCount = std::max(firstLayerOutputCount, net->network.GetLayer(0)->outputCount);
+
 	searchThreadData.Alloc(firstLayerOutputCount);
 
 	srand((unsigned int)time(0)); // Randomize

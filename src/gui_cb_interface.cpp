@@ -58,6 +58,10 @@ void SetSearchTimeLimits( double maxTime, int info, int moreInfo )
 // Returns a game result based on the previous search (and maybe the ones before that)
 int GetAdjucationValue( const BestMoveInfo& searchMove, int& numDrawScoreMoves )
 {
+	// I don't think this ever happens
+	if (searchMove.eval == INVALID_VAL || searchMove.eval == BOOK_INVALID_VALUE || searchMove.eval == TIMEOUT)
+		return CB_UNKNOWN;
+
 	const int WinEval = 400;
 	const int DrawEval = (engine.transcript.numMoves > 150) ? 45 : 11;
 

@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 [Setup]
-#define AppVersion "2.05"
+#define AppVersion "2.06"
 #define AppEnvironment "32"
 
 AppName=GuiNN_Checkers{#AppEnvironment}
@@ -27,4 +27,4 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Source: "..\checkerboard\egdb.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\checkerboard\engines\gui_nn{#AppEnvironment}.dll"; DestDir: "{app}\engines"; Flags: ignoreversion
 Source: "..\bin\opening.gbk"; DestDir: "{app}\engines"; Flags: ignoreversion
-Source: "..\bin\nets.gnn"; DestDir: "{app}\engines"; Flags: ignoreversion
+Source: "..\bin\nets206.gnn"; DestDir: "{app}\engines"; Flags: ignoreversion

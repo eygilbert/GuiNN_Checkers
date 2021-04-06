@@ -57,9 +57,9 @@ struct CheckerBitboards
 	uint32_t empty;	// Empty squares
 
 	// functions
-	uint32_t GetJumpers(const eColor c) const;
+	uint32_t inline GetJumpers(const eColor c) const;
 	uint32_t inline GetMovers(const eColor c) const;
-	uint32_t GetCheckers() const { return (P[WHITE] | P[BLACK]) & ~K; };
+	uint32_t inline GetCheckers() const { return (P[WHITE] | P[BLACK]) & ~K; };
 };
 
 struct Board 
@@ -71,7 +71,6 @@ struct Board
 	int EvaluateBoard( int ply, struct SearchThreadData& search, const struct EvalNetInfo& netInfo, int depth) const;
 	int AllKingsEval() const;
 	int dbWinEval(int dbresult) const;
-	int nonincremental_nn_eval(SearchThreadData& search) const;
 
 	std::string ToString();
 	int FromString( char *text );
@@ -113,6 +112,6 @@ struct Board
 	CheckerBitboards Bitboards;
 	uint64_t hashKey;
 	eColor sideToMove;
-	int8_t numPieces[2];
 	uint8_t reversibleMoves;
+	int8_t numPieces[2];
 };

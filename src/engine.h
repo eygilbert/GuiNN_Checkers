@@ -35,6 +35,7 @@ struct Engine
 	COpeningBook* openingBook;
 	SDatabaseInfo dbInfo;
 	std::vector<CheckersNet*> evalNets;
+	std::string binaryNetFile = "Nets206.gnn";
 
 	Board board; // current game board
 	Transcript transcript;
