@@ -73,7 +73,7 @@ struct Board
 	int dbWinEval(int dbresult) const;
 
 	std::string ToString();
-	int FromString( char *text );
+	int FromString(const char *text );
 
 	static Board StartPosition();
 	Board Flip();

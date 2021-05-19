@@ -262,7 +262,7 @@ std::string Board::ToString()
 	return ret;
 }
 
-int Board::FromString( char *text )
+int Board::FromString(const char *text )
 {
 	int nColor = 0, i = 0;
 	while (text[i] == ' ') i++;
@@ -284,6 +284,12 @@ int Board::FromString( char *text )
 			i++;
 			if (text[i] >= '0' && text[i] <= '9') sq = sq*10 + text[i]-'0';
 			SetPiece(FlipSqX(sq-1), nColor | nKing );
+			
+			/* Fix bug when FEN doesn't end in a period. Period is not in
+			 * the PDN 3.0 standard. See https://pdn.fmjd.org/
+			 */
+			if (text[i] == 0)
+				break;
 		}
 		i++;
 	}
